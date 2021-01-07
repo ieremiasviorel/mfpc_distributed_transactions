@@ -1,6 +1,6 @@
 package com.mfpc.mfpc_distributed_transactions.repository;
 
-import com.mfpc.mfpc_distributed_transactions.model.AirportDb;
+import com.mfpc.mfpc_distributed_transactions.data_model.AirportDb;
 import org.springframework.data.util.Pair;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;

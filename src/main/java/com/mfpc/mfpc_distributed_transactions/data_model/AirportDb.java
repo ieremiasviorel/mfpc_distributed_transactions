@@ -1,4 +1,4 @@
-package com.mfpc.mfpc_distributed_transactions.model;
+package com.mfpc.mfpc_distributed_transactions.data_model;
 
 import lombok.Data;
 

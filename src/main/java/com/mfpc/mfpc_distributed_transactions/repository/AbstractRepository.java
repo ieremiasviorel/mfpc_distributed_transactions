@@ -1,6 +1,6 @@
 package com.mfpc.mfpc_distributed_transactions.repository;
 
-import com.mfpc.mfpc_distributed_transactions.model.DbRecord;
+import com.mfpc.mfpc_distributed_transactions.data_model.DbRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Pair;

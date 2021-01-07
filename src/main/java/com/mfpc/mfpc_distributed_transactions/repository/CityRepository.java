@@ -1,6 +1,6 @@
 package com.mfpc.mfpc_distributed_transactions.repository;
 
-import com.mfpc.mfpc_distributed_transactions.model.CityDb;
+import com.mfpc.mfpc_distributed_transactions.data_model.CityDb;
 import org.springframework.data.util.Pair;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;

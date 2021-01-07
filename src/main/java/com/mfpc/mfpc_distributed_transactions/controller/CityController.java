@@ -1,6 +1,6 @@
 package com.mfpc.mfpc_distributed_transactions.controller;
 
-import com.mfpc.mfpc_distributed_transactions.model.CityDb;
+import com.mfpc.mfpc_distributed_transactions.data_model.CityDb;
 import com.mfpc.mfpc_distributed_transactions.repository.CityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
