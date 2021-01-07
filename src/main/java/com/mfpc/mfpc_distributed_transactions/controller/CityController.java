@@ -4,6 +4,7 @@ import com.mfpc.mfpc_distributed_transactions.model.CityDb;
 import com.mfpc.mfpc_distributed_transactions.repository.CityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
@@ -25,13 +26,19 @@ public class CityController {
     }
 
     @GetMapping("insert")
-    public String create(@RequestParam("name") String name, @RequestParam("country") String country) {
+    public RedirectView create(@RequestParam("name") String name, @RequestParam("country") String country) {
         CityDb cityDb = new CityDb();
         cityDb.setName(name);
         cityDb.setCountry(country);
 
         Long id = cityRepository.insert(cityDb);
 
-        return "redirect:/city/" + id;
+        return new RedirectView("/city/" + id);
+    }
+
+    @GetMapping("delete/{id}")
+    public RedirectView create(@PathVariable Long id) {
+        cityRepository.delete(id);
+        return new RedirectView("/city");
     }
 }

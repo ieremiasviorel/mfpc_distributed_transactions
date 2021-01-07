@@ -3,6 +3,7 @@ package com.mfpc.mfpc_distributed_transactions.repository;
 import com.mfpc.mfpc_distributed_transactions.model.DbRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Pair;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -49,7 +50,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
     }
 
     public void update(T t) {
-        String updateQuery = this.createInsertQuery(t);
+        String updateQuery = this.createUpdateQuery(t);
         jdbcTemplate.update(updateQuery);
     }
 
@@ -60,36 +61,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
 
     protected abstract String getTableName();
 
-    protected abstract String createInsertQuery(T t);
-
-    protected abstract String createUpdateQuery(T t);
-
-    protected String createSelectQuery(Long id) {
-        StringBuilder query = new StringBuilder();
-        query.append("SELECT * FROM ");
-        query.append(this.getTableName());
-        if (id != null) {
-            query.append(" WHERE id = ");
-            query.append(id);
-        }
-
-        String queryStr = query.toString();
-        logger.debug(queryStr);
-        return queryStr;
-    }
-
-    private String createDeleteQuery(Long id) {
-        StringBuilder query = new StringBuilder();
-        query.append(this.getTableName());
-        if (id != null) {
-            query.append(" WHERE id = ");
-            query.append(id);
-        }
-
-        String queryStr = query.toString();
-        logger.debug(queryStr);
-        return queryStr;
-    }
+    protected abstract List<Pair<String, String>> getObjectAttributes(T t);
 
     private Class<T> initializeTypeClass() {
         return (Class<T>) ((ParameterizedType) getClass()
@@ -100,5 +72,77 @@ public abstract class AbstractRepository<T extends DbRecord> {
         String query = "SELECT MAX(id) FROM " + this.getTableName() + ";";
         logger.debug(query);
         return this.jdbcTemplate.queryForObject(query, Long.class);
+    }
+
+    private String createInsertQuery(T t) {
+        StringBuilder query = new StringBuilder();
+        query.append("INSERT INTO ");
+        query.append(this.getTableName());
+        List<Pair<String, String>> objectAttributes = getObjectAttributes(t);
+
+        query.append(" (id");
+        objectAttributes.forEach(pair -> query.append(", ").append(pair.getFirst()));
+        query.append(") VALUES (");
+        query.append(t.getId());
+        objectAttributes.forEach(pair -> query.append(", ").append(wrapWithQuotes(pair.getSecond())));
+        query.append(");");
+
+        String queryStr = query.toString();
+        logger.debug(queryStr);
+        return queryStr;
+    }
+
+    private String createSelectQuery(Long id) {
+        StringBuilder query = new StringBuilder();
+        query.append("SELECT * FROM ");
+        query.append(this.getTableName());
+        if (id != null) {
+            query.append(" WHERE id = ");
+            query.append(id);
+        }
+        query.append(";");
+
+        String queryStr = query.toString();
+        logger.debug(queryStr);
+        return queryStr;
+    }
+
+    private String createUpdateQuery(T t) {
+        StringBuilder query = new StringBuilder();
+        query.append("UPDATE ");
+        query.append(this.getTableName());
+        query.append(" SET ");
+        List<Pair<String, String>> objectAttributes = getObjectAttributes(t);
+
+        query.append(objectAttributes.get(0).getFirst() + " = " + wrapWithQuotes(objectAttributes.get(0).getSecond()));
+        objectAttributes.remove(0);
+        objectAttributes.forEach(pair -> query.append(", " + pair.getFirst() + " = " + wrapWithQuotes(pair.getSecond())));
+
+        query.append("WHERE id = ");
+        query.append(t.getId());
+        query.append(";");
+
+        String queryStr = query.toString();
+        logger.debug(queryStr);
+        return queryStr;
+    }
+
+    private String createDeleteQuery(Long id) {
+        StringBuilder query = new StringBuilder();
+        query.append("DELETE FROM ");
+        query.append(this.getTableName());
+        if (id != null) {
+            query.append(" WHERE id = ");
+            query.append(id);
+        }
+        query.append(";");
+
+        String queryStr = query.toString();
+        logger.debug(queryStr);
+        return queryStr;
+    }
+
+    private String wrapWithQuotes(String fieldValue) {
+        return "'" + fieldValue + "'";
     }
 }

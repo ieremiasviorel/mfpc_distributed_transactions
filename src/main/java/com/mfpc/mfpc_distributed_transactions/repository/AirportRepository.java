@@ -1,15 +1,15 @@
 package com.mfpc.mfpc_distributed_transactions.repository;
 
 import com.mfpc.mfpc_distributed_transactions.model.AirportDb;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Pair;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Repository
 public class AirportRepository extends AbstractRepository<AirportDb> {
-    private final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
-
     public AirportRepository(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
@@ -20,12 +20,14 @@ public class AirportRepository extends AbstractRepository<AirportDb> {
     }
 
     @Override
-    protected String createInsertQuery(AirportDb airportDb) {
-        return null;
-    }
+    protected List<Pair<String, String>> getObjectAttributes(AirportDb airportDb) {
+        List<Pair<String, String>> attributes = new ArrayList<>();
+        attributes.add(Pair.of("cityId", airportDb.getCityId().toString()));
+        attributes.add(Pair.of("name", airportDb.getName()));
+        attributes.add(Pair.of("code", airportDb.getCode()));
+        attributes.add(Pair.of("latitude", airportDb.getLatitude().toString()));
+        attributes.add(Pair.of("longitude", airportDb.getLongitude().toString()));
 
-    @Override
-    protected String createUpdateQuery(AirportDb airportDb) {
-        return null;
+        return attributes;
     }
 }
