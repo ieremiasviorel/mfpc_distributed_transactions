@@ -1,7 +1,7 @@
 package com.mfpc.mfpc_distributed_transactions.controller;
 
-import com.mfpc.mfpc_distributed_transactions.data_model.CityDb;
-import com.mfpc.mfpc_distributed_transactions.repository.CityRepository;
+import com.mfpc.mfpc_distributed_transactions.business_model.City;
+import com.mfpc.mfpc_distributed_transactions.service.CityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
@@ -13,32 +13,32 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CityController {
 
-    private final CityRepository cityRepository;
+    private final CityService cityService;
 
     @GetMapping("{id}")
-    public CityDb getOne(@PathVariable("id") Long id) {
-        return cityRepository.find(id);
+    public City getOne(@PathVariable("id") Long id) {
+        return cityService.find(id);
     }
 
     @GetMapping
-    public List<CityDb> getAll() {
-        return cityRepository.findAll();
+    public List<City> getAll() {
+        return cityService.findAll();
     }
 
     @GetMapping("insert")
     public RedirectView create(@RequestParam("name") String name, @RequestParam("country") String country) {
-        CityDb cityDb = new CityDb();
-        cityDb.setName(name);
-        cityDb.setCountry(country);
+        City city = new City();
+        city.setName(name);
+        city.setCountry(country);
 
-        Long id = cityRepository.insert(cityDb);
+        Long id = cityService.insert(city);
 
         return new RedirectView("/city/" + id);
     }
 
     @GetMapping("delete/{id}")
     public RedirectView create(@PathVariable Long id) {
-        cityRepository.delete(id);
+        cityService.delete(id);
         return new RedirectView("/city");
     }
 }
