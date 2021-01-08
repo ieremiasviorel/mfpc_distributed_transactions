@@ -4,6 +4,8 @@ import com.mfpc.mfpc_distributed_transactions.business_model.Airport;
 import com.mfpc.mfpc_distributed_transactions.data_model.AirportDb;
 import com.mfpc.mfpc_distributed_transactions.mapper.AirportMapper;
 import com.mfpc.mfpc_distributed_transactions.repository.AirportRepository;
+import com.mfpc.mfpc_distributed_transactions.transaction.model.Transaction;
+import com.mfpc.mfpc_distributed_transactions.transaction.service.TransactionScheduler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +15,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AirportServiceImpl implements AirportService {
-
     private final AirportRepository airportRepository;
     private final AirportMapper airportMapper;
     private final CityService cityService;
@@ -24,17 +25,21 @@ public class AirportServiceImpl implements AirportService {
     }
 
     @Override
-    public Airport find(Long id) {
-        AirportDb airportDb = airportRepository.find(id);
+    public Airport find(Long id, Transaction transaction) {
+        transaction = Transaction.defaultTransaction(transaction, currentThread());
 
-        return airportDbToAirport(airportDb);
+        TransactionScheduler.addTransaction(transaction);
+
+        AirportDb airportDb = airportRepository.find(id, transaction);
+
+        return airportDbToAirport(airportDb, transaction);
     }
 
     @Override
     public List<Airport> findAll() {
         return airportRepository.findAll()
                 .stream()
-                .map(this::airportDbToAirport)
+                .map(airportDb -> airportDbToAirport(airportDb, null))
                 .collect(Collectors.toList());
     }
 
@@ -48,10 +53,10 @@ public class AirportServiceImpl implements AirportService {
 
     }
 
-    private Airport airportDbToAirport(AirportDb airportDb) {
+    private Airport airportDbToAirport(AirportDb airportDb, Transaction transaction) {
         Airport airport = airportMapper.airportDbToAirport(airportDb);
 
-        airport.setCity(cityService.find(airportDb.getCityId()));
+        airport.setCity(cityService.find(airportDb.getCityId(), transaction));
 
         return airport;
     }

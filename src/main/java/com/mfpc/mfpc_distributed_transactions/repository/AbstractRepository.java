@@ -1,6 +1,8 @@
 package com.mfpc.mfpc_distributed_transactions.repository;
 
 import com.mfpc.mfpc_distributed_transactions.data_model.DbRecord;
+import com.mfpc.mfpc_distributed_transactions.transaction.model.*;
+import com.mfpc.mfpc_distributed_transactions.transaction.service.TransactionScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Pair;
@@ -9,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
+import java.util.UUID;
 
 public abstract class AbstractRepository<T extends DbRecord> {
     private final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
@@ -34,7 +37,29 @@ public abstract class AbstractRepository<T extends DbRecord> {
         return this.nextId++;
     }
 
-    public T find(Long id) {
+    public T find(Long id, Transaction transaction) {
+        logger.debug("find " + getTableName() + "." + id + " | " + transaction);
+        Resource resource = Resource
+                .builder()
+                .tableName(getTableName())
+                .recordId(id)
+                .build();
+
+        Operation operation = Operation
+                .builder()
+                .id(UUID.randomUUID())
+                .parent(transaction)
+                .type(OperationType.READ)
+                .resource(resource)
+                .compensationQuery("")
+                .build();
+
+        TransactionScheduler.addOperationToTransaction(operation, transaction.getId());
+
+        logger.debug("find before lock " + getTableName() + "." + id + " | " + transaction);
+        TransactionScheduler.lockResource(resource, transaction);
+        logger.debug("find after lock " + getTableName() + "." + id + " | " + transaction);
+
         String query = createSelectQuery(id);
         List<T> result = jdbcTemplate.query(query, new BeanPropertyRowMapper<T>(this.typeClass));
         if (result.size() > 0) {

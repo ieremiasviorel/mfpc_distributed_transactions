@@ -19,7 +19,7 @@ public class AirportController {
 
     @GetMapping("{id}")
     public Airport getOne(@PathVariable("id") Long id) {
-        return airportService.find(id);
+        return airportService.find(id, null);
     }
 
     @GetMapping

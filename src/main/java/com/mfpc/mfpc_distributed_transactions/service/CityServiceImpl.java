@@ -4,6 +4,7 @@ import com.mfpc.mfpc_distributed_transactions.business_model.City;
 import com.mfpc.mfpc_distributed_transactions.data_model.CityDb;
 import com.mfpc.mfpc_distributed_transactions.mapper.CityMapper;
 import com.mfpc.mfpc_distributed_transactions.repository.CityRepository;
+import com.mfpc.mfpc_distributed_transactions.transaction.model.Transaction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,8 +24,10 @@ public class CityServiceImpl implements CityService {
     }
 
     @Override
-    public City find(Long id) {
-        CityDb cityDb = cityRepository.find(id);
+    public City find(Long id, Transaction transaction) {
+        transaction = Transaction.defaultTransaction(transaction, currentThread());
+
+        CityDb cityDb = cityRepository.find(id, transaction);
 
         if (cityDb != null) {
             return cityMapper.cityDbToCity(cityDb);

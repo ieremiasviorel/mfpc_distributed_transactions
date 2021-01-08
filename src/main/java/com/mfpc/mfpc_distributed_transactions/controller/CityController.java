@@ -17,7 +17,7 @@ public class CityController {
 
     @GetMapping("{id}")
     public City getOne(@PathVariable("id") Long id) {
-        return cityService.find(id);
+        return cityService.find(id, null);
     }
 
     @GetMapping
