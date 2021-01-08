@@ -25,7 +25,7 @@ public class CityServiceImpl implements CityService {
 
     @Override
     public City find(Long id, Transaction transaction) {
-        transaction = Transaction.defaultTransaction(transaction, currentThread());
+        transaction = initializeAndRegisterTransactionIfNeeded(transaction);
 
         CityDb cityDb = cityRepository.find(id, transaction);
 

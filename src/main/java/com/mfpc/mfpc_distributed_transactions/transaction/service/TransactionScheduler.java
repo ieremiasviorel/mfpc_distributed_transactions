@@ -24,18 +24,18 @@ public class TransactionScheduler extends Thread {
         state.getTransactions().add(transaction);
     }
 
-    public static synchronized void addOperationToTransaction(Operation operation, UUID transactionId) {
+    public static synchronized void addOperationToTransaction(Operation operation) {
         logger.debug(Thread.currentThread().getId() + " addOperation " + operation);
 
         Optional<Transaction> transactionOptional = state.getTransactions()
                 .stream()
-                .filter(t -> t.getId().equals(transactionId))
+                .filter(t -> t.getId().equals(operation.getParent().getId()))
                 .findFirst();
 
         if (transactionOptional.isPresent()) {
             transactionOptional.get().getOperations().add(operation);
         } else {
-            logger.warn("No transaction with id " + transactionId.toString() + " found!");
+            logger.warn("No transaction with id " + operation.getParent().getId().toString() + " found!");
         }
     }
 

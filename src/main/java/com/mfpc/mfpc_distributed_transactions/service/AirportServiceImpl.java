@@ -26,9 +26,7 @@ public class AirportServiceImpl implements AirportService {
 
     @Override
     public Airport find(Long id, Transaction transaction) {
-        transaction = Transaction.defaultTransaction(transaction, currentThread());
-
-        TransactionScheduler.addTransaction(transaction);
+        transaction = initializeAndRegisterTransactionIfNeeded(transaction);
 
         AirportDb airportDb = airportRepository.find(id, transaction);
 

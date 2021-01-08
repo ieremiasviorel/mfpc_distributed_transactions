@@ -17,19 +17,15 @@ public class Transaction {
     private List<Operation> operations;
     private Thread thread;
 
-    public static Transaction defaultTransaction(Transaction existingTransaction, Thread thread) {
-        if (existingTransaction != null) {
-            return existingTransaction;
-        } else {
-            return Transaction
-                    .builder()
-                    .id(UUID.randomUUID())
-                    .timestamp(new Timestamp(System.currentTimeMillis()))
-                    .status(TransactionStatus.ACTIVE)
-                    .operations(new ArrayList<>())
-                    .thread(thread)
-                    .build();
-        }
+    public static Transaction defaultTransaction(Thread thread) {
+        return Transaction
+                .builder()
+                .id(UUID.randomUUID())
+                .timestamp(new Timestamp(System.currentTimeMillis()))
+                .status(TransactionStatus.ACTIVE)
+                .operations(new ArrayList<>())
+                .thread(thread)
+                .build();
     }
 
     @Override

@@ -39,25 +39,13 @@ public abstract class AbstractRepository<T extends DbRecord> {
 
     public T find(Long id, Transaction transaction) {
         logger.debug("find " + getTableName() + "." + id + " | " + transaction);
-        Resource resource = Resource
-                .builder()
-                .tableName(getTableName())
-                .recordId(id)
-                .build();
 
-        Operation operation = Operation
-                .builder()
-                .id(UUID.randomUUID())
-                .parent(transaction)
-                .type(OperationType.READ)
-                .resource(resource)
-                .compensationQuery("")
-                .build();
+        Operation operation = createOperation(OperationType.READ, id, transaction);
 
-        TransactionScheduler.addOperationToTransaction(operation, transaction.getId());
+        registerOperation(operation);
 
         logger.debug("find before lock " + getTableName() + "." + id + " | " + transaction);
-        TransactionScheduler.lockResource(resource, transaction);
+        TransactionScheduler.lockResource(operation.getResource(), transaction);
         logger.debug("find after lock " + getTableName() + "." + id + " | " + transaction);
 
         String query = createSelectQuery(id);
@@ -97,6 +85,27 @@ public abstract class AbstractRepository<T extends DbRecord> {
         String query = "SELECT MAX(id) FROM " + this.getTableName() + ";";
         logger.debug(query);
         return this.jdbcTemplate.queryForObject(query, Long.class);
+    }
+
+    private Operation createOperation(OperationType operationType, Long id, Transaction transaction) {
+        Resource resource = Resource
+                .builder()
+                .tableName(getTableName())
+                .recordId(id)
+                .build();
+
+        return Operation
+                .builder()
+                .id(UUID.randomUUID())
+                .parent(transaction)
+                .type(operationType)
+                .resource(resource)
+                .compensationQuery("")
+                .build();
+    }
+
+    private void registerOperation(Operation operation) {
+        TransactionScheduler.addOperationToTransaction(operation);
     }
 
     private String createInsertQuery(T t) {
