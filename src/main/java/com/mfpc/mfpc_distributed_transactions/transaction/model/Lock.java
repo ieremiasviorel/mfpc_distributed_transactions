@@ -14,4 +14,12 @@ public class Lock {
     private Resource resource;
     // transaction holding the lock
     private Transaction transaction;
+
+    @Override
+    public String toString() {
+        return "LOCK [ " +
+                "type=" + type +
+                ", transaction=" + transaction.getId() +
+                " ]";
+    }
 }

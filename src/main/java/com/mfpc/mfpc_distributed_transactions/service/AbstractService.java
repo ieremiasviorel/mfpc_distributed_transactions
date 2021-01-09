@@ -81,7 +81,7 @@ public abstract class AbstractService<T extends DbRecord, TDb extends DbRecord> 
 
     protected abstract T tDbToT(TDb tDb, Transaction transaction);
 
-    private Transaction initializeAndRegisterTransactionIfNeeded(Transaction transaction) {
+    protected Transaction initializeAndRegisterTransactionIfNeeded(Transaction transaction) {
         if (transaction == null) {
             transaction = Transaction.defaultTransaction(currentThread());
             TransactionScheduler.addTransaction(transaction);
@@ -91,7 +91,7 @@ public abstract class AbstractService<T extends DbRecord, TDb extends DbRecord> 
         return transaction;
     }
 
-    private void commitTransactionIfNeeded(Transaction transaction) {
+    protected void commitTransactionIfNeeded(Transaction transaction) {
         Transaction transactionToCommit = transactionsToCommit.get(transaction.getId());
         if (transactionToCommit != null) {
             TransactionScheduler.commitTransaction(transactionToCommit);

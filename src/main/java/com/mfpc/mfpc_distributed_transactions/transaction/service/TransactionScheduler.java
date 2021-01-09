@@ -1,7 +1,7 @@
 package com.mfpc.mfpc_distributed_transactions.transaction.service;
 
+import com.mfpc.mfpc_distributed_transactions.data_model.DbRecord;
 import com.mfpc.mfpc_distributed_transactions.transaction.model.*;
-import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Pair;
@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class TransactionScheduler extends Thread {
+public class TransactionScheduler {
     private static final Logger logger = LoggerFactory.getLogger(TransactionScheduler.class);
 
     private static final TransactionSchedulerState state = new TransactionSchedulerState();
@@ -24,13 +24,12 @@ public class TransactionScheduler extends Thread {
      */
 
     public static synchronized void addTransaction(Transaction transaction) {
-        logger.debug(Thread.currentThread().getId() + " addTransaction " + transaction);
-
+        logger.debug("ADD TRANSACTION | " + transaction);
         state.getTransactions().add(transaction);
     }
 
-    public static synchronized void addOperationToTransaction(Operation operation) {
-        logger.debug(Thread.currentThread().getId() + " addOperation " + operation);
+    public static synchronized boolean addOperationToTransaction(Operation operation) {
+        logger.debug("ADD OPERATION | " + operation);
 
         Optional<Transaction> transactionOptional = state.getTransactions()
                 .stream()
@@ -39,27 +38,34 @@ public class TransactionScheduler extends Thread {
 
         if (transactionOptional.isEmpty()) {
             logger.error("No transaction with id " + operation.getParent().getId().toString() + " found!");
-            return;
+            return true;
         }
 
         transactionOptional.get().getOperations().add(operation);
-        lockResource(operation);
+        return lockResource(operation);
     }
 
-    public static synchronized void lockResource(Operation operation) {
-        logger.debug(Thread.currentThread().getId() + " lockResource " + operation.getResource() + " | " + operation.getParent());
+    public static synchronized boolean lockResource(Operation operation) {
+        logger.debug("LOCK ATTEMPT | " + operation.getResource() + " | " + operation.getType() + " | " + operation.getParent().getId());
 
         List<Lock> currentResourceLocks = getCurrentResourceLocks(operation.getResource());
         boolean areLocksCompatibleWithOperation = areLocksCompatibleWithOperation(currentResourceLocks, operation.getType());
 
         if (areLocksCompatibleWithOperation) {
+            logger.debug("LOCK GRANTED | " + operation.getResource() + " | " + operation.getParent().getId());
             createAndRegisterLock(operation);
+            return true;
         } else {
+            logger.debug(String.valueOf(Thread.currentThread().getId()));
+            logger.debug("LOCK WAIT | " + operation.getResource() + " | [ " + operation.getParent().getId() + "," + operation.getParent().getThread().getId() + " ] | " + currentResourceLocks);
             suspendOperation(operation, currentResourceLocks);
+            return false;
         }
     }
 
     public static synchronized void commitTransaction(Transaction transaction) {
+        logger.debug("COMMIT TRANSACTION " + transaction);
+
         List<Lock> locks = state.getLocks()
                 .stream()
                 .filter(lock -> lock.getTransaction().getId().equals(transaction.getId()))
@@ -75,6 +81,7 @@ public class TransactionScheduler extends Thread {
 
             if (lockWaitFor.isPresent()) {
                 Transaction transactionToUnlock = lockWaitFor.get().getWaitForLock().get(0);
+                logger.debug("RESUME TRANSACTION " + transactionToUnlock.getId());
                 transactionToUnlock.getThread().resume();
 
                 if (lockWaitFor.get().getWaitForLock().size() > 1) {
@@ -89,11 +96,11 @@ public class TransactionScheduler extends Thread {
     private static synchronized List<Lock> getCurrentResourceLocks(Resource resource) {
         return state.getLocks()
                 .stream()
-                .filter(lock -> lock.getResource().equals(resource))
+                .filter(lock -> lock.getResource().getTableName().equals(resource.getTableName()) && (lock.getResource().getRecordId().equals(resource.getRecordId()) || lock.getResource().getRecordId().equals(DbRecord.ALL)))
                 .collect(Collectors.toList());
     }
 
-    private static boolean areLocksCompatibleWithOperation(List<Lock> resourceLocks, OperationType type) {
+    private static synchronized boolean areLocksCompatibleWithOperation(List<Lock> resourceLocks, OperationType type) {
         // no locks currently on the resource
         if (resourceLocks.size() == 0) {
             return true;
@@ -122,7 +129,7 @@ public class TransactionScheduler extends Thread {
         state.getLocks().add(lock);
     }
 
-    private static void suspendOperation(Operation operation, List<Lock> currentResourceLocks) {
+    private static synchronized void suspendOperation(Operation operation, List<Lock> currentResourceLocks) {
         List<Pair<Lock, Optional<WaitFor>>> currentWaitFor = getWaitForListForLocks(currentResourceLocks);
 
         for (Pair<Lock, Optional<WaitFor>> lockWaitFor : currentWaitFor) {
@@ -165,36 +172,5 @@ public class TransactionScheduler extends Thread {
                 .build();
 
         state.getWaitForGraph().add(waitFor);
-    }
-
-    /**
-     * ========================================
-     * Running on own thread
-     * ========================================
-     */
-
-    @SneakyThrows
-    @Override
-    public synchronized void run() {
-        while (true) {
-            Thread.sleep(2000);
-
-            synchronized (state) {
-                if (state.getWaitForGraph().size() > 0) {
-                    logger.debug("has waiting locks: " + state.getWaitForGraph().size());
-                    state.getWaitForGraph().forEach(waitFor -> {
-                        if (waitFor.getWaitForLock().size() > 0) {
-                            logger.debug("has waiting transactions on lock: " + waitFor.getWaitForLock().size());
-                            Transaction transaction = waitFor.getWaitForLock().get(0);
-                            logger.debug(Thread.currentThread().getId() + " unlock waiting thread " + transaction.getThread().getId());
-                            transaction.getThread().resume();
-                            waitFor.getWaitForLock().remove(transaction);
-                        }
-                    });
-                } else {
-                    logger.debug("no waiting");
-                }
-            }
-        }
     }
 }

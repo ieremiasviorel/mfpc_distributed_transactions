@@ -27,13 +27,10 @@ public abstract class AbstractRepository<T extends DbRecord> {
     }
 
     public Long insert(T t, Transaction transaction) {
-        logger.debug("insert " + getTableName() + " | " + transaction);
+        logger.debug("INSERT " + getTableName() + " | " + transaction.getId());
 
-        Operation operation = createOperation(OperationType.WRITE, null, transaction);
-
-        logger.debug("insert before lock " + getTableName() + " | " + transaction);
+        Operation operation = createOperation(OperationType.WRITE, DbRecord.ALL, transaction);
         registerOperation(operation);
-        logger.debug("insert after lock " + getTableName() + " | " + transaction);
 
         t.setId(this.nextId);
         String insertQuery = this.createInsertQuery(t);
@@ -42,13 +39,10 @@ public abstract class AbstractRepository<T extends DbRecord> {
     }
 
     public T find(Long id, Transaction transaction) {
-        logger.debug("find " + getTableName() + "." + id + " | " + transaction);
+        logger.debug("GET " + getTableName() + "." + id + " | " + transaction.getId());
 
         Operation operation = createOperation(OperationType.READ, id, transaction);
-
-        logger.debug("find before lock " + getTableName() + "." + id + " | " + transaction);
         registerOperation(operation);
-        logger.debug("find after lock " + getTableName() + "." + id + " | " + transaction);
 
         String query = createSelectQuery(id);
         List<T> result = jdbcTemplate.query(query, new BeanPropertyRowMapper<T>(this.typeClass));
@@ -60,39 +54,30 @@ public abstract class AbstractRepository<T extends DbRecord> {
     }
 
     public List<T> findAll(Transaction transaction) {
-        logger.debug("findAll " + getTableName() + ".ALL" + " | " + transaction);
+        logger.debug("GET ALL " + getTableName() + ".ALL" + " | " + transaction.getId());
 
-        Operation operation = createOperation(OperationType.READ, null, transaction);
-
-        logger.debug("findAll before lock " + getTableName() + ".ALL" + " | " + transaction);
+        Operation operation = createOperation(OperationType.READ, DbRecord.ALL, transaction);
         registerOperation(operation);
-        logger.debug("findAll after lock " + getTableName() + ".ALL" + " | " + transaction);
 
         String query = createSelectQuery(null);
         return jdbcTemplate.query(query, new BeanPropertyRowMapper<T>(this.typeClass));
     }
 
     public void update(T t, Transaction transaction) {
-        logger.debug("update " + getTableName() + "." + t.getId() + " | " + transaction);
+        logger.debug("UPDATE " + getTableName() + "." + t.getId() + " | " + transaction.getId());
 
-        Operation operation = createOperation(OperationType.WRITE, null, transaction);
-
-        logger.debug("update before lock " + getTableName() + "." + t.getId() + " | " + transaction);
+        Operation operation = createOperation(OperationType.WRITE, t.getId(), transaction);
         registerOperation(operation);
-        logger.debug("update after lock " + getTableName() + "." + t.getId() + " | " + transaction);
 
         String updateQuery = this.createUpdateQuery(t);
         jdbcTemplate.update(updateQuery);
     }
 
     public void delete(Long id, Transaction transaction) {
-        logger.debug("delete " + getTableName() + "." + id + " | " + transaction);
+        logger.debug("DELETE " + getTableName() + "." + id + " | " + transaction.getId());
 
-        Operation operation = createOperation(OperationType.WRITE, null, transaction);
-
-        logger.debug("delete before lock " + getTableName() + "." + id + " | " + transaction);
+        Operation operation = createOperation(OperationType.WRITE, id, transaction);
         registerOperation(operation);
-        logger.debug("delete after lock " + getTableName() + "." + id + " | " + transaction);
 
         String query = createDeleteQuery(id);
         jdbcTemplate.update(query);
@@ -109,7 +94,6 @@ public abstract class AbstractRepository<T extends DbRecord> {
 
     private Long initializeId() {
         String query = "SELECT MAX(id) FROM " + this.getTableName() + ";";
-        logger.debug(query);
 
         Long id = this.jdbcTemplate.queryForObject(query, Long.class);
         if (id == null) {
@@ -137,7 +121,10 @@ public abstract class AbstractRepository<T extends DbRecord> {
     }
 
     private void registerOperation(Operation operation) {
-        TransactionScheduler.addOperationToTransaction(operation);
+        boolean registerOperation = TransactionScheduler.addOperationToTransaction(operation);
+        if (!registerOperation) {
+            Thread.currentThread().suspend();
+        }
     }
 
     private String createInsertQuery(T t) {
@@ -153,9 +140,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
         objectAttributes.forEach(pair -> query.append(", ").append(wrapWithQuotes(pair.getSecond())));
         query.append(");");
 
-        String queryStr = query.toString();
-        logger.debug(queryStr);
-        return queryStr;
+        return query.toString();
     }
 
     private String createSelectQuery(Long id) {
@@ -168,9 +153,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
         }
         query.append(";");
 
-        String queryStr = query.toString();
-        logger.debug(queryStr);
-        return queryStr;
+        return query.toString();
     }
 
     private String createUpdateQuery(T t) {
@@ -188,9 +171,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
         query.append(t.getId());
         query.append(";");
 
-        String queryStr = query.toString();
-        logger.debug(queryStr);
-        return queryStr;
+        return query.toString();
     }
 
     private String createDeleteQuery(Long id) {
@@ -203,9 +184,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
         }
         query.append(";");
 
-        String queryStr = query.toString();
-        logger.debug(queryStr);
-        return queryStr;
+        return query.toString();
     }
 
     private String wrapWithQuotes(String fieldValue) {

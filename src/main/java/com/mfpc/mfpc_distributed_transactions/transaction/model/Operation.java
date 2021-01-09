@@ -20,7 +20,6 @@ public class Operation {
         return "OPERATION [" +
                 "id=" + id +
                 ", parent=" + parent.getId() +
-                ", thread=" + parent.getThread().getId() +
                 ", type=" + type +
                 ", resource=" + resource +
                 " ]";
