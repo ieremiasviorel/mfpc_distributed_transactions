@@ -12,6 +12,7 @@ public class Operation {
     private Transaction parent;
     private OperationType type;
     private Resource resource;
+    // query used to rollback the operation if needed
     private String compensationQuery;
 
     @Override

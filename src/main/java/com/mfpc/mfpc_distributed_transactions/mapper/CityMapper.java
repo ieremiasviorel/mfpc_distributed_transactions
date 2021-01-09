@@ -7,5 +7,6 @@ import org.mapstruct.Mapper;
 @Mapper
 public interface CityMapper {
     City cityDbToCity(CityDb cityDb);
+
     CityDb cityToCityDb(City city);
 }

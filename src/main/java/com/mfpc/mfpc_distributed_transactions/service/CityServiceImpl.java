@@ -13,8 +13,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class CityServiceImpl implements CityService {
-
+public class CityServiceImpl extends AbstractService implements CityService {
     private final CityRepository cityRepository;
     private final CityMapper cityMapper;
 
@@ -29,11 +28,16 @@ public class CityServiceImpl implements CityService {
 
         CityDb cityDb = cityRepository.find(id, transaction);
 
+        City city;
         if (cityDb != null) {
-            return cityMapper.cityDbToCity(cityDb);
+            city = cityMapper.cityDbToCity(cityDb);
         } else {
-            return null;
+            city = null;
         }
+
+        commitTransactionIfNeeded(transaction);
+
+        return city;
     }
 
     @Override

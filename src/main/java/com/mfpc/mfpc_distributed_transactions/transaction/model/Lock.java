@@ -10,5 +10,8 @@ import java.util.UUID;
 public class Lock {
     private UUID id;
     private OperationType type;
+    // locked resource
     private Resource resource;
+    // transaction holding the lock
+    private Transaction transaction;
 }

@@ -5,7 +5,6 @@ import com.mfpc.mfpc_distributed_transactions.data_model.AirportDb;
 import com.mfpc.mfpc_distributed_transactions.mapper.AirportMapper;
 import com.mfpc.mfpc_distributed_transactions.repository.AirportRepository;
 import com.mfpc.mfpc_distributed_transactions.transaction.model.Transaction;
-import com.mfpc.mfpc_distributed_transactions.transaction.service.TransactionScheduler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +13,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class AirportServiceImpl implements AirportService {
+public class AirportServiceImpl extends AbstractService implements AirportService {
     private final AirportRepository airportRepository;
     private final AirportMapper airportMapper;
     private final CityService cityService;
@@ -30,7 +29,11 @@ public class AirportServiceImpl implements AirportService {
 
         AirportDb airportDb = airportRepository.find(id, transaction);
 
-        return airportDbToAirport(airportDb, transaction);
+        Airport airport = airportDbToAirport(airportDb, transaction);
+
+        commitTransactionIfNeeded(transaction);
+
+        return airport;
     }
 
     @Override

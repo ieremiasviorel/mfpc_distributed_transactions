@@ -14,3 +14,14 @@ create table airport (
     longitude float,
     primary key (id)
 ) engine=InnoDB;
+
+create table flight (
+    id bigint not null auto_increment,
+    flightNumber varchar(255),
+    airplaneType varchar(255),
+    departureAirportId bigint not null,
+    arrivalAirportId bigint not null,
+    departureTime timestamp,
+    arrivalTime timestamp,
+    primary key (id)
+) engine=InnoDB;

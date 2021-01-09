@@ -24,10 +24,6 @@ public abstract class AbstractRepository<T extends DbRecord> {
         this.jdbcTemplate = jdbcTemplate;
         this.typeClass = initializeTypeClass();
         this.nextId = initializeId();
-        if (this.nextId == null) {
-            this.nextId = 0L;
-        }
-        this.nextId += 1;
     }
 
     public Long insert(T t) {
@@ -42,10 +38,8 @@ public abstract class AbstractRepository<T extends DbRecord> {
 
         Operation operation = createOperation(OperationType.READ, id, transaction);
 
-        registerOperation(operation);
-
         logger.debug("find before lock " + getTableName() + "." + id + " | " + transaction);
-        TransactionScheduler.lockResource(operation.getResource(), transaction);
+        registerOperation(operation);
         logger.debug("find after lock " + getTableName() + "." + id + " | " + transaction);
 
         String query = createSelectQuery(id);
@@ -84,7 +78,13 @@ public abstract class AbstractRepository<T extends DbRecord> {
     private Long initializeId() {
         String query = "SELECT MAX(id) FROM " + this.getTableName() + ";";
         logger.debug(query);
-        return this.jdbcTemplate.queryForObject(query, Long.class);
+
+        Long id = this.jdbcTemplate.queryForObject(query, Long.class);
+        if (id == null) {
+            id = 0L;
+        }
+
+        return id + 1;
     }
 
     private Operation createOperation(OperationType operationType, Long id, Transaction transaction) {

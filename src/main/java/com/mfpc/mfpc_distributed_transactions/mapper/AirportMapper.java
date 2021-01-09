@@ -7,5 +7,6 @@ import org.mapstruct.Mapper;
 @Mapper
 public interface AirportMapper {
     Airport airportDbToAirport(AirportDb airportDb);
+
     AirportDb airportToAirportDb(Airport airport);
 }

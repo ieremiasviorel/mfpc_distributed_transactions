@@ -11,6 +11,8 @@ import java.util.UUID;
 public class WaitFor {
     private UUID id;
     private Lock lock;
+    // transaction that has the lock
     private Transaction hasLock;
+    // transactions that wait for the lock
     private List<Transaction> waitForLock;
 }

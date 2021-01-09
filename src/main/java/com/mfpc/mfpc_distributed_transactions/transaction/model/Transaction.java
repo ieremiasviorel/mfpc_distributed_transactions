@@ -32,6 +32,7 @@ public class Transaction {
     public String toString() {
         return "TRANSACTION [" +
                 "id=" + id +
+                ", operations=" + operations.size() +
                 ", thread=" + thread.getId() +
                 " ]";
     }
