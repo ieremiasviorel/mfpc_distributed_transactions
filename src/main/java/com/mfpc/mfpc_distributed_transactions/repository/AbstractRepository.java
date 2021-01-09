@@ -27,6 +27,14 @@ public abstract class AbstractRepository<T extends DbRecord> {
     }
 
     public Long insert(T t, Transaction transaction) {
+        logger.debug("insert " + getTableName() + " | " + transaction);
+
+        Operation operation = createOperation(OperationType.WRITE, null, transaction);
+
+        logger.debug("insert before lock " + getTableName() + " | " + transaction);
+        registerOperation(operation);
+        logger.debug("insert after lock " + getTableName() + " | " + transaction);
+
         t.setId(this.nextId);
         String insertQuery = this.createInsertQuery(t);
         jdbcTemplate.update(insertQuery);
@@ -52,16 +60,40 @@ public abstract class AbstractRepository<T extends DbRecord> {
     }
 
     public List<T> findAll(Transaction transaction) {
+        logger.debug("findAll " + getTableName() + ".ALL" + " | " + transaction);
+
+        Operation operation = createOperation(OperationType.READ, null, transaction);
+
+        logger.debug("findAll before lock " + getTableName() + ".ALL" + " | " + transaction);
+        registerOperation(operation);
+        logger.debug("findAll after lock " + getTableName() + ".ALL" + " | " + transaction);
+
         String query = createSelectQuery(null);
         return jdbcTemplate.query(query, new BeanPropertyRowMapper<T>(this.typeClass));
     }
 
     public void update(T t, Transaction transaction) {
+        logger.debug("update " + getTableName() + "." + t.getId() + " | " + transaction);
+
+        Operation operation = createOperation(OperationType.WRITE, null, transaction);
+
+        logger.debug("update before lock " + getTableName() + "." + t.getId() + " | " + transaction);
+        registerOperation(operation);
+        logger.debug("update after lock " + getTableName() + "." + t.getId() + " | " + transaction);
+
         String updateQuery = this.createUpdateQuery(t);
         jdbcTemplate.update(updateQuery);
     }
 
     public void delete(Long id, Transaction transaction) {
+        logger.debug("delete " + getTableName() + "." + id + " | " + transaction);
+
+        Operation operation = createOperation(OperationType.WRITE, null, transaction);
+
+        logger.debug("delete before lock " + getTableName() + "." + id + " | " + transaction);
+        registerOperation(operation);
+        logger.debug("delete after lock " + getTableName() + "." + id + " | " + transaction);
+
         String query = createDeleteQuery(id);
         jdbcTemplate.update(query);
     }
