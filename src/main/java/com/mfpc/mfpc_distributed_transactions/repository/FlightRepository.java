@@ -25,6 +25,7 @@ public class FlightRepository extends AbstractRepository<FlightDb> {
         attributes.add(Pair.of("flightNumber", flightDb.getFlightNumber()));
         attributes.add(Pair.of("airplaneType", flightDb.getAirplaneType()));
         attributes.add(Pair.of("departureAirportId", flightDb.getDepartureAirportId().toString()));
+        attributes.add(Pair.of("arrivalAirportId", flightDb.getArrivalAirportId().toString()));
         attributes.add(Pair.of("departureTime", flightDb.getDepartureTime().toString()));
         attributes.add(Pair.of("arrivalTime", flightDb.getArrivalTime().toString()));
 

@@ -26,7 +26,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
         this.nextId = initializeId();
     }
 
-    public Long insert(T t) {
+    public Long insert(T t, Transaction transaction) {
         t.setId(this.nextId);
         String insertQuery = this.createInsertQuery(t);
         jdbcTemplate.update(insertQuery);
@@ -51,17 +51,17 @@ public abstract class AbstractRepository<T extends DbRecord> {
         }
     }
 
-    public List<T> findAll() {
+    public List<T> findAll(Transaction transaction) {
         String query = createSelectQuery(null);
         return jdbcTemplate.query(query, new BeanPropertyRowMapper<T>(this.typeClass));
     }
 
-    public void update(T t) {
+    public void update(T t, Transaction transaction) {
         String updateQuery = this.createUpdateQuery(t);
         jdbcTemplate.update(updateQuery);
     }
 
-    public void delete(Long id) {
+    public void delete(Long id, Transaction transaction) {
         String query = createDeleteQuery(id);
         jdbcTemplate.update(query);
     }

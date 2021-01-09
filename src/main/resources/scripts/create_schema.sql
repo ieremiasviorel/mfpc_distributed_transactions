@@ -25,3 +25,18 @@ create table flight (
     arrivalTime timestamp,
     primary key (id)
 ) engine=InnoDB;
+
+create table user (
+    id bigint not null auto_increment,
+    username varchar(50) unique,
+    firstName varchar(255),
+    lastName varchar(255),
+    primary key (id)
+) engine=InnoDB;
+
+create table reservation (
+    id bigint not null auto_increment,
+    flightId bigint not null,
+    userId bigint not null,
+    primary key (id)
+) engine=InnoDB;

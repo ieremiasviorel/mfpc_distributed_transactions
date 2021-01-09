@@ -5,52 +5,26 @@ import com.mfpc.mfpc_distributed_transactions.data_model.FlightDb;
 import com.mfpc.mfpc_distributed_transactions.mapper.FlightMapper;
 import com.mfpc.mfpc_distributed_transactions.repository.FlightRepository;
 import com.mfpc.mfpc_distributed_transactions.transaction.model.Transaction;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
-@RequiredArgsConstructor
-public class FlightServiceImpl extends AbstractService implements FlightService {
-    private final FlightRepository flightRepository;
+public class FlightServiceImpl extends AbstractService<Flight, FlightDb> implements FlightService {
     private final FlightMapper flightMapper;
     private final AirportService airportService;
 
-    @Override
-    public Long insert(Flight flight) {
-        return null;
+    public FlightServiceImpl(FlightRepository flightRepository, FlightMapper flightMapper, AirportService airportService) {
+        super(flightRepository);
+        this.flightMapper = flightMapper;
+        this.airportService = airportService;
     }
 
     @Override
-    public Flight find(Long id, Transaction transaction) {
-        transaction = initializeAndRegisterTransactionIfNeeded(transaction);
-
-        FlightDb flightDb = flightRepository.find(id, transaction);
-
-        Flight flight = flightDbToFlight(flightDb, transaction);
-
-        commitTransactionIfNeeded(transaction);
-
-        return flight;
+    protected FlightDb tToTDb(Flight flight) {
+        return flightMapper.flightToFlightDb(flight);
     }
 
     @Override
-    public List<Flight> findAll() {
-        return null;
-    }
-
-    @Override
-    public void update(Flight flight) {
-
-    }
-
-    @Override
-    public void delete(Long id) {
-
-    }
-
-    private Flight flightDbToFlight(FlightDb flightDb, Transaction transaction) {
+    protected Flight tDbToT(FlightDb flightDb, Transaction transaction) {
         Flight flight = flightMapper.flightDbToFlight(flightDb);
 
         flight.setDepartureAirport(airportService.find(flightDb.getDepartureAirportId(), transaction));

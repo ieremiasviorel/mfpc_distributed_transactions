@@ -22,23 +22,27 @@ public class CityController {
 
     @GetMapping
     public List<City> getAll() {
-        return cityService.findAll();
+        return cityService.findAll(null);
     }
 
-    @GetMapping("insert")
-    public RedirectView create(@RequestParam("name") String name, @RequestParam("country") String country) {
-        City city = new City();
-        city.setName(name);
-        city.setCountry(country);
-
-        Long id = cityService.insert(city);
+    @PostMapping()
+    public RedirectView create(@RequestBody City city) {
+        Long id = cityService.insert(city, null);
 
         return new RedirectView("/city/" + id);
     }
 
-    @GetMapping("delete/{id}")
-    public RedirectView create(@PathVariable Long id) {
-        cityService.delete(id);
+    @PatchMapping()
+    public RedirectView update(@RequestBody City city) {
+        cityService.update(city, null);
+
+        return new RedirectView("/city/" + city.getId());
+    }
+
+    @DeleteMapping("{id}")
+    public RedirectView delete(@PathVariable Long id) {
+        cityService.delete(id, null);
+
         return new RedirectView("/city");
     }
 }
