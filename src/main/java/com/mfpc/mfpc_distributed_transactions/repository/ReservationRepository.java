@@ -28,6 +28,7 @@ public class ReservationRepository extends AbstractRepository<ReservationDb> {
 
         Operation operation = createOperation(OperationType.READ, DbRecord.ALL, transaction);
         registerOperation(operation);
+        operation.setCompensationQuery(null);
 
         String query = createSelectByFlightIdQuery(id);
         return jdbcTemplate.query(query, new BeanPropertyRowMapper<ReservationDb>(this.typeClass));

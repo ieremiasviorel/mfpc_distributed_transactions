@@ -1,7 +1,11 @@
 package com.mfpc.mfpc_distributed_transactions.repository;
 
 import com.mfpc.mfpc_distributed_transactions.data_model.DbRecord;
-import com.mfpc.mfpc_distributed_transactions.transaction.model.*;
+import com.mfpc.mfpc_distributed_transactions.exception.DeadlockException;
+import com.mfpc.mfpc_distributed_transactions.transaction.model.Operation;
+import com.mfpc.mfpc_distributed_transactions.transaction.model.OperationType;
+import com.mfpc.mfpc_distributed_transactions.transaction.model.Resource;
+import com.mfpc.mfpc_distributed_transactions.transaction.model.Transaction;
 import com.mfpc.mfpc_distributed_transactions.transaction.service.TransactionScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,8 +14,10 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.ParameterizedType;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public abstract class AbstractRepository<T extends DbRecord> {
     private final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
@@ -31,6 +37,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
 
         Operation operation = createOperation(OperationType.WRITE, DbRecord.ALL, transaction);
         registerOperation(operation);
+        operation.setCompensationQuery(createDeleteQuery(nextId));
 
         t.setId(this.nextId);
         String insertQuery = this.createInsertQuery(t);
@@ -43,6 +50,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
 
         Operation operation = createOperation(OperationType.READ, id, transaction);
         registerOperation(operation);
+        operation.setCompensationQuery(null);
 
         String query = createSelectQuery(id);
         List<T> result = jdbcTemplate.query(query, new BeanPropertyRowMapper<T>(this.typeClass));
@@ -58,6 +66,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
 
         Operation operation = createOperation(OperationType.READ, DbRecord.ALL, transaction);
         registerOperation(operation);
+        operation.setCompensationQuery(null);
 
         String query = createSelectQuery(null);
         return jdbcTemplate.query(query, new BeanPropertyRowMapper<T>(this.typeClass));
@@ -68,6 +77,8 @@ public abstract class AbstractRepository<T extends DbRecord> {
 
         Operation operation = createOperation(OperationType.WRITE, t.getId(), transaction);
         registerOperation(operation);
+        T tOld = find(t.getId(), transaction);
+        operation.setCompensationQuery(createUpdateQuery(tOld));
 
         String updateQuery = this.createUpdateQuery(t);
         jdbcTemplate.update(updateQuery);
@@ -78,6 +89,8 @@ public abstract class AbstractRepository<T extends DbRecord> {
 
         Operation operation = createOperation(OperationType.WRITE, id, transaction);
         registerOperation(operation);
+        T tOld = find(id, transaction);
+        operation.setCompensationQuery(createInsertQuery(tOld));
 
         String query = createDeleteQuery(id);
         jdbcTemplate.update(query);
@@ -116,14 +129,38 @@ public abstract class AbstractRepository<T extends DbRecord> {
                 .parent(transaction)
                 .type(operationType)
                 .resource(resource)
-                .compensationQuery("")
                 .build();
     }
 
     protected void registerOperation(Operation operation) {
-        boolean registerOperation = TransactionScheduler.addOperationToTransaction(operation);
-        if (!registerOperation) {
-            Thread.currentThread().suspend();
+        try {
+            boolean registerOperation = TransactionScheduler.addOperationToTransaction(operation);
+            if (!registerOperation) {
+                Thread.currentThread().suspend();
+            }
+        } catch (DeadlockException ex) {
+            rollbackTransaction(operation.getParent());
+            TransactionScheduler.rollbackTransaction(operation.getParent());
+            throw ex;
+        }
+    }
+
+    private void rollbackTransaction(Transaction transaction) {
+        List<Operation> operations = transaction.getOperations()
+                .subList(0, transaction.getOperations().size() - 1);
+        Collections.reverse(operations);
+
+        logger.debug("ROLLBACK TRANSACTION: " + transaction.getId() + ", " + operations.size() + " operations");
+
+        List<String> compensationQueries = operations
+                .stream()
+                .map(Operation::getCompensationQuery)
+                .collect(Collectors.toList());
+
+        for (String query : compensationQueries) {
+            if (query != null) {
+                jdbcTemplate.execute(query);
+            }
         }
     }
 

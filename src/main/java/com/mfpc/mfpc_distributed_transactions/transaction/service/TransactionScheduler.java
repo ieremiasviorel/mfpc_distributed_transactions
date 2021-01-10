@@ -1,6 +1,7 @@
 package com.mfpc.mfpc_distributed_transactions.transaction.service;
 
 import com.mfpc.mfpc_distributed_transactions.data_model.DbRecord;
+import com.mfpc.mfpc_distributed_transactions.exception.DeadlockException;
 import com.mfpc.mfpc_distributed_transactions.transaction.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,12 +14,6 @@ public class TransactionScheduler {
     private static final Logger logger = LoggerFactory.getLogger(TransactionScheduler.class);
 
     private static final TransactionSchedulerState state = new TransactionSchedulerState();
-
-    /**
-     * ========================================
-     * Accessed by repositories statically
-     * ========================================
-     */
 
     public static synchronized void addTransaction(Transaction transaction) {
         logger.debug("ADD TRANSACTION | " + transaction);
@@ -42,7 +37,7 @@ public class TransactionScheduler {
         return lockResource(operation);
     }
 
-    public static synchronized boolean lockResource(Operation operation) {
+    private static synchronized boolean lockResource(Operation operation) {
         logger.debug("LOCK ATTEMPT | " + operation.getResource() + " | " + operation.getType() + " | " + operation.getParent().getId());
 
         List<Lock> currentResourceLocks = getCurrentResourceLocks(operation.getResource());
@@ -61,41 +56,77 @@ public class TransactionScheduler {
         } else {
             logger.debug("LOCK WAIT | " + operation.getResource() + " | [ " + operation.getParent().getId() + "," + operation.getParent().getThread().getId() + " ] | " + currentResourceLocks);
             suspendOperation(operation, currentResourceLocks);
-            logger.debug("DEADLOCK: " + checkDeadLock(operation.getParent(), currentResourceLocks));
-            return false;
+
+            boolean isDeadlock = checkDeadLock(operation.getParent(), currentResourceLocks);
+
+            if (isDeadlock) {
+                throw new DeadlockException();
+            } else {
+                return false;
+            }
         }
     }
 
     public static synchronized void commitTransaction(Transaction transaction) {
         logger.debug("COMMIT TRANSACTION " + transaction);
 
+        releaseTransactionLocks(transaction);
+
+        transaction.setStatus(TransactionStatus.COMMITTED);
+    }
+
+    public static synchronized void rollbackTransaction(Transaction transaction) {
+        logger.debug("ROLLBACK TRANSACTION " + transaction);
+
+        releaseTransactionLocks(transaction);
+        cleanupWaitForGraph(transaction);
+
+        transaction.setStatus(TransactionStatus.COMMITTED);
+    }
+
+    private static synchronized void releaseTransactionLocks(Transaction transaction) {
         List<Lock> locks = state.getLocks()
                 .stream()
                 .filter(lock -> lock.getTransaction().getId().equals(transaction.getId()))
                 .collect(Collectors.toList());
 
-        state.getLocks().removeAll(locks);
-
         for (Lock lock : locks) {
-            Optional<WaitFor> lockWaitFor = state.getWaitForGraph()
-                    .stream()
-                    .filter(waitFor -> waitFor.getLock().getId().equals(lock.getId()))
-                    .findFirst();
+            releaseLock(lock);
+        }
+    }
 
-            if (lockWaitFor.isPresent()) {
-                Transaction transactionToUnlock = lockWaitFor.get().getWaitForLock().get(0);
-                logger.debug("RESUME TRANSACTION " + transactionToUnlock.getId());
-                transactionToUnlock.getThread().resume();
+    private static synchronized void releaseLock(Lock lock) {
+        Optional<WaitFor> lockWaitFor = state.getWaitForGraph()
+                .stream()
+                .filter(waitFor -> waitFor.getLock().getId().equals(lock.getId()))
+                .findFirst();
 
-                if (lockWaitFor.get().getWaitForLock().size() > 1) {
-                    lockWaitFor.get().getWaitForLock().remove(0);
-                } else {
-                    state.getWaitForGraph().remove(lockWaitFor.get());
-                }
+        if (lockWaitFor.isPresent()) {
+            Transaction transactionToUnlock = lockWaitFor.get().getWaitForLock().get(0);
+            logger.debug("RESUME TRANSACTION " + transactionToUnlock.getId());
+            transactionToUnlock.getThread().resume();
+
+            if (lockWaitFor.get().getWaitForLock().size() > 1) {
+                lockWaitFor.get().getWaitForLock().remove(0);
+            } else {
+                state.getWaitForGraph().remove(lockWaitFor.get());
             }
         }
 
-        transaction.setStatus(TransactionStatus.COMMITTED);
+        state.getLocks().remove(lock);
+    }
+
+    private static synchronized void cleanupWaitForGraph(Transaction transaction) {
+        for (WaitFor waitFor : state.getWaitForGraph()) {
+            waitFor.getWaitForLock().remove(transaction);
+        }
+
+        List<WaitFor> emptyWaitFors = state.getWaitForGraph()
+                .stream()
+                .filter(waitFor -> waitFor.getWaitForLock().size() == 0)
+                .collect(Collectors.toList());
+
+        state.getWaitForGraph().removeAll(emptyWaitFors);
     }
 
     private static synchronized List<Lock> getCurrentResourceLocks(Resource resource) {
@@ -163,10 +194,12 @@ public class TransactionScheduler {
 
         if (transactionsThatCurrWaitsFor.size() > 0 && transactionsThatWaitForCurr.size() > 0) {
             Set<Transaction> deadlockedTransactions = intersection(new HashSet<>(transactionsThatCurrWaitsFor), new HashSet<>(transactionsThatWaitForCurr));
-            return deadlockedTransactions.size() > 0;
-        } else {
-            return false;
+            if (deadlockedTransactions.size() > 0) {
+                logger.debug("DETECTED DEADLOCK: " + currTransaction.getId() + " - " + new ArrayList<>(deadlockedTransactions).get(0).getId());
+                return true;
+            }
         }
+        return false;
     }
 
     private static synchronized List<Pair<Lock, Optional<WaitFor>>> getWaitForListForLocks(List<Lock> currentResourceLocks) {
