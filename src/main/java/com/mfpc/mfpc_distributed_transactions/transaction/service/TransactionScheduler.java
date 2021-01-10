@@ -6,10 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class TransactionScheduler {
@@ -64,6 +61,7 @@ public class TransactionScheduler {
         } else {
             logger.debug("LOCK WAIT | " + operation.getResource() + " | [ " + operation.getParent().getId() + "," + operation.getParent().getThread().getId() + " ] | " + currentResourceLocks);
             suspendOperation(operation, currentResourceLocks);
+            logger.debug("DEADLOCK: " + checkDeadLock(operation.getParent(), currentResourceLocks));
             return false;
         }
     }
@@ -151,6 +149,26 @@ public class TransactionScheduler {
         }
     }
 
+    private static synchronized boolean checkDeadLock(Transaction currTransaction, List<Lock> locksWaitingFor) {
+        List<Transaction> transactionsThatCurrWaitsFor = locksWaitingFor
+                .stream()
+                .map(Lock::getTransaction)
+                .collect(Collectors.toList());
+
+        List<Transaction> transactionsThatWaitForCurr = state.getWaitForGraph()
+                .stream()
+                .filter(waitFor -> waitFor.getHasLock().getId().equals(currTransaction.getId()))
+                .flatMap(waitFor -> waitFor.getWaitForLock().stream())
+                .collect(Collectors.toList());
+
+        if (transactionsThatCurrWaitsFor.size() > 0 && transactionsThatWaitForCurr.size() > 0) {
+            Set<Transaction> deadlockedTransactions = intersection(new HashSet<>(transactionsThatCurrWaitsFor), new HashSet<>(transactionsThatWaitForCurr));
+            return deadlockedTransactions.size() > 0;
+        } else {
+            return false;
+        }
+    }
+
     private static synchronized List<Pair<Lock, Optional<WaitFor>>> getWaitForListForLocks(List<Lock> currentResourceLocks) {
         return currentResourceLocks
                 .stream()
@@ -179,5 +197,12 @@ public class TransactionScheduler {
                 .build();
 
         state.getWaitForGraph().add(waitFor);
+    }
+
+    public static <T> Set<T> intersection(Set<T> setA, Set<T> setB) {
+        Set<T> intersection = new HashSet<T>(setA);
+        intersection.retainAll(setB);
+
+        return intersection;
     }
 }
