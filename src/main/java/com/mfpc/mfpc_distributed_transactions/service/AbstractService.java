@@ -12,7 +12,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public abstract class AbstractService<T extends DbRecord, TDb extends DbRecord> {
-    private final AbstractRepository<TDb> repository;
+    protected final AbstractRepository<TDb> repository;
 
     private final Map<UUID, Transaction> transactionsToCommit = new HashMap<>();
 

@@ -7,6 +7,9 @@ import com.mfpc.mfpc_distributed_transactions.repository.ReservationRepository;
 import com.mfpc.mfpc_distributed_transactions.transaction.model.Transaction;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class ReservationServiceImpl extends AbstractService<Reservation, ReservationDb> implements ReservationService {
     private final ReservationMapper reservationMapper;
@@ -21,6 +24,20 @@ public class ReservationServiceImpl extends AbstractService<Reservation, Reserva
     }
 
     @Override
+    public List<Reservation> findByFlightId(Long id, Transaction transaction) {
+        transaction = initializeAndRegisterTransactionIfNeeded(transaction);
+
+        List<Reservation> reservations = repository.findAll(transaction)
+                .stream()
+                .map(this.reservationMapper::reservationDbToReservation)
+                .collect(Collectors.toList());
+
+        commitTransactionIfNeeded(transaction);
+
+        return reservations;
+    }
+
+    @Override
     protected ReservationDb tToTDb(Reservation reservation) {
         return reservationMapper.reservationToReservationDb(reservation);
     }
@@ -28,6 +45,13 @@ public class ReservationServiceImpl extends AbstractService<Reservation, Reserva
     @Override
     protected Reservation tDbToT(ReservationDb reservationDb, Transaction transaction) {
         Reservation reservation = reservationMapper.reservationDbToReservation(reservationDb);
+
+        // simulate a long-running transaction
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         reservation.setFlight(flightService.find(reservationDb.getFlightId(), transaction));
         reservation.setUser(userService.find(reservationDb.getUserId(), transaction));

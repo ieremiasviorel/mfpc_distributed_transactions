@@ -49,6 +49,12 @@ public class TransactionScheduler {
         logger.debug("LOCK ATTEMPT | " + operation.getResource() + " | " + operation.getType() + " | " + operation.getParent().getId());
 
         List<Lock> currentResourceLocks = getCurrentResourceLocks(operation.getResource());
+
+        currentResourceLocks = currentResourceLocks
+                .stream()
+                .filter(lock -> lock.getTransaction().getId() != operation.getParent().getId())
+                .collect(Collectors.toList());
+
         boolean areLocksCompatibleWithOperation = areLocksCompatibleWithOperation(currentResourceLocks, operation.getType());
 
         if (areLocksCompatibleWithOperation) {
@@ -90,6 +96,8 @@ public class TransactionScheduler {
                 }
             }
         }
+
+        transaction.setStatus(TransactionStatus.COMMITTED);
     }
 
     private static synchronized List<Lock> getCurrentResourceLocks(Resource resource) {

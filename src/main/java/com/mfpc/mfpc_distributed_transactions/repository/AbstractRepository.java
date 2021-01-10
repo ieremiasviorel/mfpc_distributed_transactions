@@ -16,8 +16,8 @@ import java.util.UUID;
 public abstract class AbstractRepository<T extends DbRecord> {
     private final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
 
-    private final JdbcTemplate jdbcTemplate;
-    private final Class<T> typeClass;
+    protected final JdbcTemplate jdbcTemplate;
+    protected final Class<T> typeClass;
     protected Long nextId;
 
     public AbstractRepository(JdbcTemplate jdbcTemplate) {
@@ -103,7 +103,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
         return id + 1;
     }
 
-    private Operation createOperation(OperationType operationType, Long id, Transaction transaction) {
+    protected Operation createOperation(OperationType operationType, Long id, Transaction transaction) {
         Resource resource = Resource
                 .builder()
                 .tableName(getTableName())
@@ -120,7 +120,7 @@ public abstract class AbstractRepository<T extends DbRecord> {
                 .build();
     }
 
-    private void registerOperation(Operation operation) {
+    protected void registerOperation(Operation operation) {
         boolean registerOperation = TransactionScheduler.addOperationToTransaction(operation);
         if (!registerOperation) {
             Thread.currentThread().suspend();
