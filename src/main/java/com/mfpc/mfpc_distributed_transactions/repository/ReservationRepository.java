@@ -7,6 +7,8 @@ import com.mfpc.mfpc_distributed_transactions.transaction.model.OperationType;
 import com.mfpc.mfpc_distributed_transactions.transaction.model.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.util.Pair;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,7 +21,7 @@ import java.util.List;
 public class ReservationRepository extends AbstractRepository<ReservationDb> {
     private final Logger logger = LoggerFactory.getLogger(ReservationRepository.class);
 
-    public ReservationRepository(JdbcTemplate jdbcTemplate) {
+    public ReservationRepository(@Autowired @Qualifier("jdbcTemplate2") JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 

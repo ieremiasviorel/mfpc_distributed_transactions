@@ -1,6 +1,8 @@
 package com.mfpc.mfpc_distributed_transactions.repository;
 
 import com.mfpc.mfpc_distributed_transactions.data_model.AirportDb;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.util.Pair;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -10,7 +12,7 @@ import java.util.List;
 
 @Repository
 public class AirportRepository extends AbstractRepository<AirportDb> {
-    public AirportRepository(JdbcTemplate jdbcTemplate) {
+    public AirportRepository(@Autowired @Qualifier("jdbcTemplate1") JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
