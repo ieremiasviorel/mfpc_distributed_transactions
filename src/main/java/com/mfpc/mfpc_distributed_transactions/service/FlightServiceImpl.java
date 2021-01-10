@@ -7,6 +7,8 @@ import com.mfpc.mfpc_distributed_transactions.mapper.FlightMapper;
 import com.mfpc.mfpc_distributed_transactions.repository.FlightRepository;
 import com.mfpc.mfpc_distributed_transactions.repository.ReservationRepository;
 import com.mfpc.mfpc_distributed_transactions.transaction.model.Transaction;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,15 +19,18 @@ public class FlightServiceImpl extends AbstractService<Flight, FlightDb> impleme
     private final AirportService airportService;
     private final ReservationRepository reservationRepository;
 
+    private final Environment environment;
+
     public FlightServiceImpl(
             FlightRepository flightRepository,
             FlightMapper flightMapper,
             AirportService airportService,
-            ReservationRepository reservationRepository) {
+            ReservationRepository reservationRepository, Environment environment) {
         super(flightRepository);
         this.flightMapper = flightMapper;
         this.airportService = airportService;
         this.reservationRepository = reservationRepository;
+        this.environment = environment;
     }
 
     /**
@@ -44,7 +49,9 @@ public class FlightServiceImpl extends AbstractService<Flight, FlightDb> impleme
 
         // simulate a long-running transaction
         try {
-            Thread.sleep(10000);
+            if (environment.acceptsProfiles(Profiles.of("simulate"))) {
+                Thread.sleep(10000);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -73,7 +80,9 @@ public class FlightServiceImpl extends AbstractService<Flight, FlightDb> impleme
 
         // simulate a long-running transaction
         try {
-            Thread.sleep(10000);
+            if (environment.acceptsProfiles(Profiles.of("simulate"))) {
+                Thread.sleep(10000);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

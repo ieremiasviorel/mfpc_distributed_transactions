@@ -5,6 +5,8 @@ import com.mfpc.mfpc_distributed_transactions.data_model.ReservationDb;
 import com.mfpc.mfpc_distributed_transactions.mapper.ReservationMapper;
 import com.mfpc.mfpc_distributed_transactions.repository.ReservationRepository;
 import com.mfpc.mfpc_distributed_transactions.transaction.model.Transaction;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,11 +18,14 @@ public class ReservationServiceImpl extends AbstractService<Reservation, Reserva
     private final FlightService flightService;
     private final UserService userService;
 
-    public ReservationServiceImpl(ReservationRepository reservationRepository, ReservationMapper reservationMapper, FlightService flightService, UserService userService) {
+    private final Environment environment;
+
+    public ReservationServiceImpl(ReservationRepository reservationRepository, ReservationMapper reservationMapper, FlightService flightService, UserService userService, Environment environment) {
         super(reservationRepository);
         this.reservationMapper = reservationMapper;
         this.flightService = flightService;
         this.userService = userService;
+        this.environment = environment;
     }
 
     @Override
@@ -48,7 +53,9 @@ public class ReservationServiceImpl extends AbstractService<Reservation, Reserva
 
         // simulate a long-running transaction
         try {
-            Thread.sleep(10000);
+            if (environment.acceptsProfiles(Profiles.of("simulate"))) {
+                Thread.sleep(10000);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
