@@ -21,11 +21,12 @@ public class FlightServiceImpl extends AbstractService<Flight, FlightDb> impleme
     }
 
     @Override
-    public Long insert(Flight flight, Transaction transaction) {
+    public void update(Flight flight, Transaction transaction) {
         transaction = super.initializeAndRegisterTransactionIfNeeded(transaction);
 
-        Long id = flightRepository.insert(tToTDb(flight), transaction);
+        flightRepository.update(tToTDb(flight), transaction);
 
+        // simulate a long-running transaction
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {
@@ -33,8 +34,6 @@ public class FlightServiceImpl extends AbstractService<Flight, FlightDb> impleme
         }
 
         commitTransactionIfNeeded(transaction);
-
-        return id;
     }
 
     @Override

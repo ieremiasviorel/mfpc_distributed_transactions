@@ -56,7 +56,6 @@ public class TransactionScheduler {
             createAndRegisterLock(operation);
             return true;
         } else {
-            logger.debug(String.valueOf(Thread.currentThread().getId()));
             logger.debug("LOCK WAIT | " + operation.getResource() + " | [ " + operation.getParent().getId() + "," + operation.getParent().getThread().getId() + " ] | " + currentResourceLocks);
             suspendOperation(operation, currentResourceLocks);
             return false;
