@@ -4,12 +4,11 @@ import com.mfpc.mfpc_distributed_transactions.business_model.Airport;
 import com.mfpc.mfpc_distributed_transactions.service.AirportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("airport")
+@RequestMapping("api/airport")
 @RequiredArgsConstructor
 public class AirportController {
 
@@ -26,23 +25,17 @@ public class AirportController {
     }
 
     @PostMapping()
-    public RedirectView create(@RequestBody Airport airport) {
-        Long id = airportService.insert(airport, null);
-
-        return new RedirectView("/airport/" + id);
+    public Long create(@RequestBody Airport airport) {
+        return airportService.insert(airport, null);
     }
 
     @PatchMapping()
-    public RedirectView update(@RequestBody Airport airport) {
+    public void update(@RequestBody Airport airport) {
         airportService.update(airport, null);
-
-        return new RedirectView("/airport/" + airport.getId());
     }
 
     @DeleteMapping("{id}")
-    public RedirectView delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id) {
         airportService.delete(id, null);
-
-        return new RedirectView("/airport");
     }
 }

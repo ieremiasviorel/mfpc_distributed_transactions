@@ -9,7 +9,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import java.util.List;
 
 @RestController
-@RequestMapping("city")
+@RequestMapping("api/city")
 @RequiredArgsConstructor
 public class CityController {
 
@@ -26,23 +26,17 @@ public class CityController {
     }
 
     @PostMapping()
-    public RedirectView create(@RequestBody City city) {
-        Long id = cityService.insert(city, null);
-
-        return new RedirectView("/city/" + id);
+    public Long create(@RequestBody City city) {
+        return cityService.insert(city, null);
     }
 
     @PatchMapping()
-    public RedirectView update(@RequestBody City city) {
+    public void update(@RequestBody City city) {
         cityService.update(city, null);
-
-        return new RedirectView("/city/" + city.getId());
     }
 
     @DeleteMapping("{id}")
-    public RedirectView delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id) {
         cityService.delete(id, null);
-
-        return new RedirectView("/city");
     }
 }

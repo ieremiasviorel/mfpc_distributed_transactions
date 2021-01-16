@@ -9,7 +9,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import java.util.List;
 
 @RestController
-@RequestMapping("flight")
+@RequestMapping("api/flight")
 @RequiredArgsConstructor
 public class FlightController {
 
@@ -26,23 +26,17 @@ public class FlightController {
     }
 
     @PostMapping()
-    public RedirectView create(@RequestBody Flight flight) {
-        Long id = flightService.insert(flight, null);
-
-        return new RedirectView("/flight/" + id);
+    public Long create(@RequestBody Flight flight) {
+        return flightService.insert(flight, null);
     }
 
     @PatchMapping()
-    public RedirectView update(@RequestBody Flight flight) {
+    public void update(@RequestBody Flight flight) {
         flightService.update(flight, null);
-
-        return new RedirectView("/flight/" + flight.getId());
     }
 
     @DeleteMapping("{id}")
-    public RedirectView delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id) {
         flightService.delete(id, null);
-
-        return new RedirectView("/flight");
     }
 }

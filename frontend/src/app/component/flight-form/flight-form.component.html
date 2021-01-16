@@ -1,0 +1,35 @@
+<ng-container *ngIf="airports$ | async as airports">
+    <ng-container *ngIf="flight$ | async as flight">
+        <mat-form-field>
+            <mat-label>Flight Number</mat-label>
+            <input matInput [(ngModel)]="flight.flightNumber">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Airplane Type</mat-label>
+            <input matInput [(ngModel)]="flight.airplaneType">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Departure Airport</mat-label>
+            <mat-select  [(ngModel)]="flight.departureAirport" [compareWith]="airportsEqual">
+                <mat-option *ngFor="let airport of airports" [value]="airport">{{airport.code}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Departure Time</mat-label>
+            <input matInput [(ngModel)]="flight.departureTime">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Arrival Airport</mat-label>
+            <mat-select  [(ngModel)]="flight.arrivalAirport" [compareWith]="airportsEqual">
+                <mat-option *ngFor="let airport of airports" [value]="airport">{{airport.code}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Arrival Time</mat-label>
+            <input matInput [(ngModel)]="flight.arrivalTime">
+        </mat-form-field>
+        <br>
+        <button mat-raised-button color="primary" class="action-button" (click)="handleSubmit(flight)">Submit</button>
+        <button mat-raised-button color="warn" class="action-button" (click)="handleCancel()">Cancel</button>
+    </ng-container>
+</ng-container>

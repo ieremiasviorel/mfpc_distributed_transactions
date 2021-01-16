@@ -1,0 +1,30 @@
+<ng-container *ngIf="cities$ | async as cities">
+    <ng-container *ngIf="airport$ | async as airport">
+        <mat-form-field>
+            <mat-label>Name</mat-label>
+            <input matInput [(ngModel)]="airport.name">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Code</mat-label>
+            <input matInput [(ngModel)]="airport.code">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>City</mat-label>
+            <mat-select  [(ngModel)]="airport.city" [compareWith]="citiesEqual">
+                <mat-option *ngFor="let city of cities" [value]="city">{{city.name}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+        <br>
+        <mat-form-field>
+            <mat-label>Latitude</mat-label>
+            <input matInput [(ngModel)]="airport.latitude">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Longitude</mat-label>
+            <input matInput [(ngModel)]="airport.longitude">
+        </mat-form-field>
+        <br>
+        <button mat-raised-button color="primary" class="action-button" (click)="handleSubmit(airport)">Submit</button>
+        <button mat-raised-button color="warn" class="action-button" (click)="handleCancel()">Cancel</button>
+    </ng-container>
+</ng-container>

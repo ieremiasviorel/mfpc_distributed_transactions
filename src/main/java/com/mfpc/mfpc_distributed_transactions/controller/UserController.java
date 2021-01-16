@@ -4,12 +4,11 @@ import com.mfpc.mfpc_distributed_transactions.business_model.User;
 import com.mfpc.mfpc_distributed_transactions.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("user")
+@RequestMapping("api/user")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -26,23 +25,17 @@ public class UserController {
     }
 
     @PostMapping()
-    public RedirectView create(@RequestBody User user) {
-        Long id = userService.insert(user, null);
-
-        return new RedirectView("/user/" + id);
+    public Long create(@RequestBody User user) {
+        return userService.insert(user, null);
     }
 
     @PatchMapping()
-    public RedirectView update(@RequestBody User user) {
+    public void update(@RequestBody User user) {
         userService.update(user, null);
-
-        return new RedirectView("/user/" + user.getId());
     }
 
     @DeleteMapping("{id}")
-    public RedirectView delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id) {
         userService.delete(id, null);
-
-        return new RedirectView("/user");
     }
 }

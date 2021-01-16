@@ -4,12 +4,11 @@ import com.mfpc.mfpc_distributed_transactions.business_model.Reservation;
 import com.mfpc.mfpc_distributed_transactions.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("reservation")
+@RequestMapping("api/reservation")
 @RequiredArgsConstructor
 public class ReservationController {
 
@@ -26,23 +25,17 @@ public class ReservationController {
     }
 
     @PostMapping()
-    public RedirectView create(@RequestBody Reservation reservation) {
-        Long id = reservationService.insert(reservation, null);
-
-        return new RedirectView("/reservation/" + id);
+    public Long create(@RequestBody Reservation reservation) {
+        return reservationService.insert(reservation, null);
     }
 
     @PatchMapping()
-    public RedirectView update(@RequestBody Reservation reservation) {
+    public void update(@RequestBody Reservation reservation) {
         reservationService.update(reservation, null);
-
-        return new RedirectView("/reservation/" + reservation.getId());
     }
 
     @DeleteMapping("{id}")
-    public RedirectView delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id) {
         reservationService.delete(id, null);
-
-        return new RedirectView("/reservation");
     }
 }

@@ -1,0 +1,23 @@
+<ng-container *ngIf="flights$ | async as flights">
+    <ng-container *ngIf="users$ | async as users">
+        <ng-container *ngIf="reservation$ | async as reservation">
+            <mat-form-field>
+                <mat-label>Flight</mat-label>
+                <mat-select [(ngModel)]="reservation.flight" [compareWith]="flightsEqual">
+                    <mat-option *ngFor="let flight of flights" [value]="flight">{{flight.flightNumber}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>User</mat-label>
+                <mat-select [(ngModel)]="reservation.user" [compareWith]="usersEqual">
+                    <mat-option *ngFor="let user of users"
+                                [value]="user">{{user.firstName}} {{user.lastName}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <br>
+            <button mat-raised-button color="primary" class="action-button" (click)="handleSubmit(reservation)">Submit
+            </button>
+            <button mat-raised-button color="warn" class="action-button" (click)="handleCancel()">Cancel</button>
+        </ng-container>
+    </ng-container>
+</ng-container>
