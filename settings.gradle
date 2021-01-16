@@ -1,2 +1,4 @@
 rootProject.name = 'mfpc_distributed_transactions'
+include 'backend'
 include 'frontend'
+

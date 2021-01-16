@@ -2,7 +2,7 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { mergeMap, tap } from 'rxjs/operators';
+import { mergeMap } from 'rxjs/operators';
 
 import { Flight } from '../../model';
 import { NAVIGATION } from '../../model/constant';
@@ -29,7 +29,7 @@ export class FlightListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.flights$ = this.flightService.getAll().pipe(tap(console.log));
+    this.flights$ = this.flightService.getAll();
   }
 
   async handleEdit(flight: Flight): Promise<void> {

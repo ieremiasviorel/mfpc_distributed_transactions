@@ -4,7 +4,6 @@ import com.mfpc.mfpc_distributed_transactions.business_model.City;
 import com.mfpc.mfpc_distributed_transactions.service.CityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
